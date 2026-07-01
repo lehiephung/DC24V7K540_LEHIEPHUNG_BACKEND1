@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const contactRoutes = require('./app/routes/contact.route');
+const ApiError = require('./app/api-error');
 
 const app = express();
 
@@ -10,7 +12,22 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to contact book application' });
 });
 
-const contactRoutes = require('./app/routes/contact.route');
 app.use('/api/contacts', contactRoutes);
+
+//handle 404 response
+app.use((req, res, next) => {
+  //Code ở đây sẽ được thực hiện khi không có route nào khớp với request
+  //Gọi next() để chuyển sang middleware xử lý lỗi
+  return next(new ApiError(404, 'Resource not found'));
+});
+
+//define error-handling middleware last, after other app.use() and routes calls
+app.use((err, req, res, next) => {
+  //Middleware xử lý lỗi tập trung
+  //Trong các đoạn code xử lý ở các route, khi gọi next(error) thì sẽ chuyển về middleware này
+  return res.status(err.statusCode || 500).json({
+    message: err.message || 'Internal Server Error',
+  });
+});
 
 module.exports = app;
